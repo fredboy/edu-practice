@@ -1,0 +1,6 @@
+language: c
+compiler: gcc
+script: 
+    cmake CMakeLists.txt
+    make
+    ./edu_practice_test
