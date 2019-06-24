@@ -194,9 +194,8 @@ CTEST(LISTS, LIST_SIMDIFF) {
     }
 }
 
-CTEST(LISTS, LIST_OCCURS_IN_LIST_TRUE) {
+CTEST(LISTS, LIST_IS_SUBLIST_OF_TRUE) {
     struct list_entry *A = NULL;
-    A = list_append(A, 'a');
     A = list_append(A, 'b');
     A = list_append(A, 'c');
     A = list_append(A, 'd');
@@ -208,10 +207,10 @@ CTEST(LISTS, LIST_OCCURS_IN_LIST_TRUE) {
     B = list_append(B, 'e');
     B = list_append(B, 'f');
     B = list_append(B, 'g');
-    ASSERT_EQUAL(1, list_occurs_in_list(A, B));
+    ASSERT_EQUAL(1, list_is_sublist_of(A, B));
 }
 
-CTEST(LISTS, LIST_OCCURS_IN_LIST_FALSE) {
+CTEST(LISTS, LIST_IS_SUBLIST_OF_FALSE) {
     struct list_entry *A = NULL;
     A = list_append(A, 'a');
     A = list_append(A, 'b');
@@ -226,7 +225,7 @@ CTEST(LISTS, LIST_OCCURS_IN_LIST_FALSE) {
     B = list_append(B, 'e');
     B = list_append(B, 'f');
     B = list_append(B, 'g');
-    ASSERT_EQUAL(0, list_occurs_in_list(A, B));
+    ASSERT_EQUAL(0, list_is_sublist_of(A, B));
 }
 
 int main(int argc, const char **argv) {

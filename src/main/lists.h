@@ -163,15 +163,33 @@ struct list_entry *list_union(struct list_entry *A, struct list_entry *B) {
 
 struct list_entry *list_intersection(struct list_entry *A, struct list_entry *B) {
     struct list_entry *C = NULL;
-    FOREACH(A) {
-        if (!list_contains_value(C, iterator.value) && list_contains_value(B, iterator.value))
-            C = list_append(C, iterator.value);
+    while (A != NULL && B != NULL) {
+        if (A->value == B->value) {
+            if (!list_contains_value(C, A->value)) C = list_append(C, A->value);
+            A = A->next;
+            B = B->next;
+        } else if (A->value < B->value) {
+            A = A->next;
+        } else {
+            B = B->next;
+        }
     }
     return C;
 }
 
 struct list_entry *list_diff(struct list_entry *A, struct list_entry *B) {
     struct list_entry *C = NULL;
+    while (A != NULL && B != NULL) {
+        if (A->value == B->value) {
+            A = A->next;
+            B = B->next;
+        } else if (A->value < B->value) {
+            if (!list_contains_value(C, A->value)) C = list_append(C, A->value);
+            A = A->next;
+        } else {
+            B = B->next;
+        }
+    }
     FOREACH(A) {
         if (!list_contains_value(C, iterator.value) && !list_contains_value(B, iterator.value))
             C = list_append(C, iterator.value);
@@ -183,40 +201,18 @@ struct list_entry *list_simdiff(struct list_entry *A, struct list_entry *B) {
     return (list_union(list_diff(A, B), list_diff(B, A)));
 }
 
-int list_occurs_in_list(struct list_entry *A, struct list_entry *B) {
-    FOREACH(A) {
-        if (!list_contains_value(B, iterator.value)) return 0;
-    }
-    return 1;
-}
-
-struct list_entry **list_get_sublists(struct list_entry *list_head) {
-    int size = list_size(list_head);
-    int n = (int) pow(2, size);
-    struct list_entry **list_array = (struct list_entry **) malloc(n * sizeof(struct list_entry *));
-    int d = 2, t = 1, l = 2, os = 0, cs = 0;
-    for (unsigned int i = 1, k = 1; k < n; i *= 2, k++) {
-        printf("%d. %d %d %d\n",k, i, d, t);
-        if (i >= n) {
-            i = t + d;
-            d *= 2;
-            if (d >= n) {
-                t += 2;
-                if (l * 2 < n) l *= 2;
-                d = l;
-            }
-        }
-        printf("%d. %d %d %d\n",k, i, d, t);
-        FOREACH(list_head) if (i & (1 << iterator.index))
-                list_array[k] = list_append(list_array[k], iterator.value);
-        cs = list_size(list_array[k]);
-        if (cs > os) {
-            os = cs;
-//            l *= 2;
-//            d= l;
+int list_is_sublist_of(struct list_entry *A, struct list_entry *B) {
+    while (A != NULL && B != NULL) {
+        if (A->value == B->value) {
+            A = A->next;
+            B = B->next;
+        } else if (A->value > B->value){
+            B = B->next;
+        } else {
+            return 0;
         }
     }
-    return list_array;
+    return A == NULL;
 }
 
 struct list_entry *list_copy(struct list_entry *list_head) {

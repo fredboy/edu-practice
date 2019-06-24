@@ -11,12 +11,6 @@ int is_latin_lower_case_letter(char c) {
     return (c >= 'a' && c <= 'z');
 }
 
-int scan_digit() {
-    char input = 0;
-    scanf("%c", &input);
-    if (is_digit(input)) return input - '0'; else return -1;
-}
-
 int scan_int() {
     char *input = (char *) malloc(256 * sizeof(char));
     scanf("%s", input);
