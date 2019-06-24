@@ -2,9 +2,6 @@
 #define STUDY_PRACTICE_UTILS_H
 
 #include <stdio.h>
-#include <termios.h>
-#include <zconf.h>
-#include <termio.h>
 
 int is_digit(char c) {
     return (c >= '0' && c <= '9');
@@ -35,18 +32,6 @@ int scan_char() {
     char result = input[0];
     free(input);
     return result;
-}
-
-int mygetch(){
-    int ch;
-    struct termios oldt, newt;
-    tcgetattr ( STDIN_FILENO, &oldt );
-    newt = oldt;
-    newt.c_lflag &= ~( ICANON | ECHO );
-    tcsetattr ( STDIN_FILENO, TCSANOW, &newt );
-    ch = getchar();
-    tcsetattr ( STDIN_FILENO, TCSANOW, &oldt );
-    return ch;
 }
 
 #endif //STUDY_PRACTICE_UTILS_H

@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <ncurses.h>
+#include <locale.h>
 
 #include "lists.h"
 #include "utils.h"
@@ -13,23 +15,10 @@ struct list_entry *ask_list_input(char name) {
     struct list_entry *list_head = NULL;
     printf("Введите элементы множества %c челез пробел.\n", name);
     if (size > 0) do {
-            printf("Множество должно быть упорядоченным и состоять из маленьких латинских букв!\n");
+            printf("Множество должно состоять из маленьких латинских букв!\n");
             list_head = list_read(size);
-    } while (!list_is_ordered(list_head) || !list_is_contains_only_latin_lower_case_letters(list_head));
-    return list_head;
-}
-
-int choose_op() {
-    system("clear");
-    printf("Выберите операцию:\n"
-           " 1) - объединение\n"
-           " 2) - пересечение\n"
-           " 3) - разность\n"
-           " 4) - сим. разность\n"
-           " 5) - входит или равно\n"
-           " 6) - все подмножества\n\n"
-           " 0 / Ctrl+C - выход\n");
-    return mygetch() - '0';
+    } while (!list_is_contains_only_latin_lower_case_letters(list_head));
+    return list_sort(list_head);
 }
 
 void print_sublists(struct list_entry *list_head) {
@@ -112,36 +101,97 @@ void op_6() {
     list_clear(A);
 }
 
+void op_7() {
+    struct list_entry *A = ask_list_input('A');
+    list_print(list_sort(A));
+    printf("\n");
+    list_clear(A);
+}
+
+void show_menu_elements(int current_choose, char **menu, int menu_size) {
+    for (int i = 0; i < menu_size; i++) {
+        if (current_choose == i) {
+            attron(A_REVERSE);
+            printw(">> %s\n", menu[i]);
+            attroff(A_REVERSE);
+        } else {
+            printw(" %s\n", menu[i]);
+        }
+    }
+}
+
+int menu(char *prompt, char **menu_text, int menu_size) {
+    int choose = 0;
+    curs_set(0);
+    while (true) {
+        clear();
+        printw("%s", prompt);
+        show_menu_elements(choose, menu_text, menu_size);
+        int character = getch();
+        switch (character) {
+            case KEY_UP:
+                if (choose > 0) {
+                    (choose)--;
+                }
+                break;
+            case KEY_DOWN:
+                if (choose < menu_size - 1) {
+                    (choose)++;
+                }
+                break;
+            case '\n':
+                curs_set(1);
+                return choose;
+            default:
+                break;
+        }
+    }
+}
+
+char **get_menu() {
+    char **menu = (char **) malloc(6 * sizeof(char *));
+    for (int i = 0; i < 6; i++) menu[i] = (char *) malloc(256 * sizeof(char));
+    menu[0] = "Объединение      ";
+    menu[1] = "Пересечение      ";
+    menu[2] = "Разность         ";
+    menu[3] = "Сим. Разность    ";
+    menu[4] = "Входит или равно ";
+    menu[5] = "Выход            ";
+    return menu;
+}
+
 int main() {
+    setlocale(LC_ALL, "");
+    char **menu_text = get_menu();
     while (1) {
-        int op;
-        do op = choose_op(); while(op < 0 || op > 6);
+        initscr();
+        raw();
+        keypad(stdscr, TRUE);
+        noecho();
+        int op = menu("Выберите операцию:\n", menu_text, 6);
+        endwin();
         switch (op) {
-            case 1:
+            case 0:
                 op_1();
                 break;
-            case 2:
+            case 1:
                 op_2();
                 break;
-            case 3:
+            case 2:
                 op_3();
                 break;
-            case 4:
+            case 3:
                 op_4();
                 break;
-            case 5:
+            case 4:
                 op_5();
                 break;
-            case 6:
-                op_6();
-                break;
-            case 0:
+            case 5:
                 exit(0);
             default:
                 break;
         }
         printf("Нажмите что хотите...\n");
-        mygetch();
-        mygetch();
+        getch();
     }
 }

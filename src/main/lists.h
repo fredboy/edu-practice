@@ -65,6 +65,13 @@ char list_get(struct list_entry *list_head, int index) {
     return 0;
 }
 
+struct list_entry *list_get_entry(struct list_entry *list_head, int index) {
+    FOREACH(list_head) {
+        if (iterator.index == index) return iterator.entry;
+    }
+    return NULL;
+}
+
 void list_set(struct list_entry *list_head, int index, char value) {
     FOREACH(list_head) {
         if (iterator.index == index) iterator.entry->value = value;
@@ -187,10 +194,79 @@ struct list_entry **list_get_sublists(struct list_entry *list_head) {
     int size = list_size(list_head);
     int n = (int) pow(2, size);
     struct list_entry **list_array = (struct list_entry **) malloc(n * sizeof(struct list_entry *));
-    for (int i = 0; i < n; i++) {
-        FOREACH(list_head) if (i & (1 << iterator.index)) list_array[i] = list_append(list_array[i], iterator.value);
+    int d = 2, t = 1, l = 2, os = 0, cs = 0;
+    for (unsigned int i = 1, k = 1; k < n; i *= 2, k++) {
+        printf("%d. %d %d %d\n",k, i, d, t);
+        if (i >= n) {
+            i = t + d;
+            d *= 2;
+            if (d >= n) {
+                t += 2;
+                if (l * 2 < n) l *= 2;
+                d = l;
+            }
+        }
+        printf("%d. %d %d %d\n",k, i, d, t);
+        FOREACH(list_head) if (i & (1 << iterator.index))
+                list_array[k] = list_append(list_array[k], iterator.value);
+        cs = list_size(list_array[k]);
+        if (cs > os) {
+            os = cs;
+//            l *= 2;
+//            d= l;
+        }
     }
     return list_array;
+}
+
+struct list_entry *list_copy(struct list_entry *list_head) {
+    struct list_entry *list_new = NULL;
+    FOREACH(list_head) list_new = list_append(list_new, iterator.value);
+    return list_new;
+}
+
+struct list_entry *list_copy_n(struct list_entry *list_head, int n) {
+    struct list_entry *list_new = NULL;
+    FOREACH(list_head) {
+        if (iterator.index == n) break;
+        list_new = list_append(list_new, iterator.value);
+    }
+    return list_new;
+}
+
+struct list_entry *list_merge_lists(struct list_entry *a, struct list_entry *b) {
+    struct list_entry *c = NULL;
+
+    while (a != NULL && b != NULL) {
+        if (a->value < b->value) {
+            if (!list_contains_value(c, a->value)) c = list_append(c, a->value);
+            a = a->next;
+        } else if (b->value < a->value) {
+            if (!list_contains_value(c, b->value)) c = list_append(c, b->value);
+            b = b->next;
+        } else {
+            a = a->next;
+        }
+    }
+    FOREACH(a) if (!list_contains_value(c, iterator.value)) c = list_append(c, iterator.value);
+    FOREACH(b) if (!list_contains_value(c, iterator.value)) c = list_append(c, iterator.value);
+    return c;
+}
+
+struct list_entry *list_sort(struct list_entry *list_head) {
+    int size = list_size(list_head);
+    if (size == 0) return NULL;
+    struct list_entry *c = NULL;
+    if (size == 1) c = list_copy(list_head);
+    else {
+        struct list_entry *a = list_copy_n(list_head, size / 2);
+        struct list_entry *b = list_copy(list_get_entry(list_head, size / 2));
+        list_clear(list_head);
+        a = list_sort(a);
+        b = list_sort(b);
+        c = list_merge_lists(a, b);
+    }
+    return c;
 }
 
 #endif //STUDY_PRACTICE_LISTS_H
