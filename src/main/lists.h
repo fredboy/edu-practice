@@ -106,6 +106,13 @@ void list_print(struct list_entry *list_head) {
     FOREACH(list_head) printf(iterator.index == size - 1 ? "%c" : "%c, ", iterator.value);
 }
 
+char *list_to_string(struct list_entry *list_head) {
+    char *list = (char *) malloc(256 * sizeof(char));
+    int size = list_size(list_head);
+    FOREACH(list_head) sprintf(list, iterator.index == size - 1 ? "%s%c" : "%s%c, ", list, iterator.value);
+    return list;
+}
+
 struct list_entry *list_read(int size) {
     struct list_entry *list_head = NULL;
     for (int i = 0; i < size; i++) {
@@ -131,6 +138,13 @@ int list_is_ordered(struct list_entry *list_head) {
             if (list_compare_values(iterator.entry, list_head) != order) return 0;
         }
     }
+    return 1;
+}
+
+int list_is_sorted(struct list_entry *list_head) {
+    if (list_size(list_head) <= 1) return 1;
+    char prev = list_head->value;
+    FOREACH(list_head) if (iterator.value < prev) return 0; else prev = iterator.value;
     return 1;
 }
 

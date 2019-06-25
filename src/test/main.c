@@ -99,20 +99,50 @@ CTEST(LISTS, LIST_FROM_ARRAY) {
     FOREACH(list_head) ASSERT_EQUAL(array[iterator.index], iterator.value);
 }
 
-CTEST(LISTS, LIST_IS_ORDERED_0) {
+CTEST(LISTS, LIST_IS_ORDERED_NULL) {
     ASSERT_EQUAL(1, list_is_ordered(NULL));
 }
 
-CTEST(LISTS, LIST_IS_ORDERED_TRUE) {
+CTEST(LISTS, LIST_IS_ORDERED_0) {
+    char array[] = {'h', 'e', 'd', 'c', 'v'};
+    struct list_entry *list_head = list_from_array(array, 5);
+    ASSERT_EQUAL(0, list_is_ordered(list_head));
+}
+
+CTEST(LISTS, LIST_IS_ORDERED_1) {
     char array[] = {'a', 'd', 'h', 'i', 'p'};
     struct list_entry *list_head = list_from_array(array, 5);
     ASSERT_EQUAL(1, list_is_ordered(list_head));
 }
 
-CTEST(LISTS, LIST_IS_ORDERED_FALSE) {
+CTEST(LISTS, LIST_IS_ORDERED_NEG1) {
+    char array[] = {'p', 'i', 'h', 'd', 'a'};
+    struct list_entry *list_head = list_from_array(array, 5);
+    ASSERT_EQUAL(1, list_is_ordered(list_head));
+}
+
+CTEST(LISTS, LIST_IS_ORDERED_TRUE) {
+    char array[] = {'a', 'd', 'h', 'i', 'p'};
+    struct list_entry *list_head = list_from_array(array, 5);
+    ASSERT_EQUAL(1, list_is_sorted(list_head));
+}
+
+CTEST(LISTS, LIST_IS_SORTED_FALSE) {
     char array[] = {'h', 'e', 'd', 'c', 'v'};
     struct list_entry *list_head = list_from_array(array, 5);
-    ASSERT_EQUAL(0, list_is_ordered(list_head));
+    ASSERT_EQUAL(0, list_is_sorted(list_head));
+}
+
+CTEST(LISTS, LIST_SORT) {
+    struct list_entry *list_head = list_random(10);
+    list_head = list_sort(list_head);
+    ASSERT_EQUAL(1, list_is_sorted(list_head));
+}
+
+CTEST(LISTS, LIST_TO_STRING) {
+    struct list_entry *list_head = list_random(10);
+    char * list = list_to_string(list_head);
+    FOREACH(list_head) ASSERT_EQUAL(iterator.value, list[iterator.index * 3]);
 }
 
 CTEST(LISTS, LIST_UNION) {
