@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <ncurses.h>
 #include <locale.h>
+#include <string.h>
 
 #include "lists.h"
 #include "utils.h"
 
 //dunno what is the normal way to do this...
-//#define CLEAR system("clear")
-#define CLEAR system("cls")
+#define CLEAR system("clear")
+//#define CLEAR system("cls")
 
 
 struct list_entry *ask_list_input(char name) {
@@ -26,22 +27,17 @@ struct list_entry *ask_list_input(char name) {
     return list_sort(list_head);
 }
 
-void printABC(struct list_entry *A, struct list_entry *B, struct list_entry *C) {
-    CLEAR;
-    printf("A = {");
-    list_print(A);
-    printf("}\n");
-    printf("B = {");
-    list_print(B);
-    printf("}\n");
-    printf("C = {");
-    list_print(C);
+void print_set(struct list_entry *list_head, char name) {
+    printf("%c = {", name);
+    list_print(list_head);
     printf("}\n");
 }
 
-void execute(int op) {
-    struct list_entry *A = ask_list_input('A');
-    struct list_entry *B = ask_list_input('B');
+void mv_print_set(int y, int x, struct list_entry *list_head, char name) {
+    mvprintw(y, x, "%c = {%s}", name, list_to_string(list_head));
+}
+
+void execute(int op, struct list_entry *A, struct list_entry *B) {
     struct list_entry *C = NULL;
     int sublist = 0;
 
@@ -64,27 +60,46 @@ void execute(int op) {
         default:
             break;
     }
-
-    printABC(A, B, C);
-    if (op == 4) printf(sublist == 1 ? "A is a subset of B\n" : "A is not a subset of B\n");
-    list_clear(A);
-    list_clear(B);
+	CLEAR;
+    print_set(A, 'A');
+    print_set(B, 'B');
+    if (op != 4) print_set(C, 'C');
+    else printf(sublist == 1 ? "A is a subset of B\n" : "A is not a subset of B\n");
     list_clear(C);
 }
 
-void show_menu_elements(int current_choose, char **menu, int menu_size) {
-    for (int i = 0; i < menu_size; i++) {
-        if (current_choose == i) {
-            attron(COLOR_PAIR(1));
-            printw(">> %s\n", menu[i]);
-            attroff(COLOR_PAIR(1));
-        } else {
-            printw(" %s\n", menu[i]);
-        }
-    }
+void draw_frame(int y1, int x1, int y2, int x2, int br_h) {
+    mvhline(y1, 0, 0, x2-x1);
+    mvhline(y2, x1, 0, x2-x1);
+    mvvline(y1, x1, 0, y2-y1);
+    mvvline(y1, x2, 0, y2-y1);
+    mvhline(y1 + br_h, x1, 0, x2-x1);
+    mvaddch(y1, x1, ACS_ULCORNER);
+    mvaddch(y1, x1, ACS_ULCORNER);
+    mvaddch(y2, x1, ACS_LLCORNER);
+    mvaddch(y1, x2, ACS_URCORNER);
+    mvaddch(y2, x2, ACS_LRCORNER);
+    mvaddch(y1 + br_h, x1, ACS_LTEE);
+    mvaddch(y1 + br_h, x2, ACS_RTEE);
 }
 
-int menu(char *prompt, char **menu_text, int menu_size) {
+void show_menu_elements(int current_choose, char **menu, int menu_size) {
+    printw("\n");
+    for (int i = 0; i < menu_size; i++) {
+        if (strcmp(menu[i], ";br") == 0) {
+            printw("\n");
+        } else if (current_choose == i) {
+            attron(COLOR_PAIR(1));
+            printw(" >> %s\n", menu[i]);
+            attroff(COLOR_PAIR(1));
+        } else {
+            printw("  %s\n", menu[i]);
+        }
+    }
+    draw_frame(0, 0, 10, 20, 3);
+}
+
+int menu(char **menu_text, int menu_size, struct list_entry *A, struct list_entry *B) {
     initscr();
     raw();
     keypad(stdscr, TRUE);
@@ -96,19 +111,22 @@ int menu(char *prompt, char **menu_text, int menu_size) {
     curs_set(0);
     while (true) {
         clear();
-        printw("%s", prompt);
         show_menu_elements(choose, menu_text, menu_size);
+        mvprintw(0, 8, "Menu");
+        mv_print_set(1, 22, A, 'A');
+        mv_print_set(2, 22, B, 'B');
+        refresh();
         int character = getch();
         switch (character) {
             case KEY_UP:
-                if (choose > 0) {
-                    (choose)--;
-                }
+                choose--;
+                if (choose < 0) choose = menu_size - 1;
+                if (menu_text[choose][0] == ';') choose--;
                 break;
             case KEY_DOWN:
-                if (choose < menu_size - 1) {
-                    (choose)++;
-                }
+                choose++;
+                if (choose >= menu_size) choose = 0;
+                if (menu_text[choose][0] == ';') choose++;
                 break;
             case '\n':
                 curs_set(1);
@@ -121,25 +139,41 @@ int menu(char *prompt, char **menu_text, int menu_size) {
 }
 
 char **get_menu() {
-    char **menu = (char **) malloc(6 * sizeof(char *));
-    for (int i = 0; i < 6; i++) menu[i] = (char *) malloc(256 * sizeof(char));
-    menu[0] = "Union                       ";
-    menu[1] = "Intersection                ";
-    menu[2] = "Difference                  ";
-    menu[3] = "Sim. Difference             ";
-    menu[4] = "Is a subset                 ";
-    menu[5] = "Quit                        ";
+    char **menu = (char **) malloc(9 * sizeof(char *));
+    menu[0] = "Input A          ";
+    menu[1] = "Input B          ";
+    menu[2] = ";br";
+    menu[3] = "Union            ";
+    menu[4] = "Intersection     ";
+    menu[5] = "Difference       ";
+    menu[6] = "Sim. Difference  ";
+    menu[7] = "Is a subset      ";
+    menu[8] = "Quit             ";
     return menu;
 }
 
 int main() {
     CLEAR;
     char **menu_text = get_menu();
+    struct list_entry *A = NULL, *B = NULL;
     while (1) {
-        int op = menu("Select an operation to perform:\n\n", menu_text, 6);
-        if (op < 5) execute(op); else {
-            free(menu_text);
-            exit(0);
+        int op = menu(menu_text, 9, A, B);
+        switch (op) {
+            case 0:
+                A = ask_list_input('A');
+                break;
+            case 1:
+                B = ask_list_input('B');
+                break;
+            case 8:
+                free(menu_text);
+                list_clear(A);
+                list_clear(B);
+                CLEAR;
+                exit(0);
+            default:
+                execute(op - 3, A, B);
+                break;
         }
         printf("Press whatever you want...\n");
         getch();
