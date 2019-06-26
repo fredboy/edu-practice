@@ -48,11 +48,15 @@ CTEST(LISTS, LIST_FOREACH) {
     ASSERT_EQUAL(list_size(list_head) - 1, sz);
 }
 
+CTEST(LISTS, LIST_GET_LAST_0) {
+    struct list_entry *list_head = NULL;
+    ASSERT_EQUAL(1, list_get_last(list_head) == NULL);
+}
+
 CTEST(LISTS, LIST_GET_LAST_1) {
     struct list_entry *list_head = NULL;
     list_head = list_append(list_head, 'a');
     ASSERT_EQUAL('a', list_get_last(list_head)->value);
-    list_head = list_clear(list_head);
 }
 
 CTEST(LISTS, LIST_GET_LAST_2) {
@@ -217,7 +221,7 @@ CTEST(LISTS, LIST_SIMDIFF) {
     B = list_append(B, 'd');
     B = list_append(B, 'e');
     B = list_append(B, 'f');
-    struct list_entry *C = list_simdiff(A, B);
+    struct list_entry *C = list_symdiff(A, B);
     ASSERT_EQUAL(4, list_size(C));
     FOREACH(C) {
         ASSERT_EQUAL(chars[iterator.index], iterator.value);

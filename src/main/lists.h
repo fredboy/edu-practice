@@ -28,7 +28,7 @@ typedef struct {
 
 struct list_entry *list_get_last(struct list_entry *list_head) {
     struct list_entry *iterator = list_head;
-    while (iterator->next != NULL) iterator = iterator->next;
+    while (iterator != NULL && iterator->next != NULL) iterator = iterator->next;
     return iterator;
 }
 
@@ -109,6 +109,7 @@ void list_print(struct list_entry *list_head) {
 char *list_to_string(struct list_entry *list_head) {
     char *list = (char *) malloc(256 * sizeof(char));
     int size = list_size(list_head);
+    list[0] = '\0';
     FOREACH(list_head) sprintf(list, iterator.index == size - 1 ? "%s%c" : "%s%c, ", list, iterator.value);
     return list;
 }
@@ -211,7 +212,7 @@ struct list_entry *list_diff(struct list_entry *A, struct list_entry *B) {
     return C;
 }
 
-struct list_entry *list_simdiff(struct list_entry *A, struct list_entry *B) {
+struct list_entry *list_symdiff(struct list_entry *A, struct list_entry *B) {
     return (list_union(list_diff(A, B), list_diff(B, A)));
 }
 

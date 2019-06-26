@@ -37,10 +37,7 @@ void mv_print_set(int y, int x, struct list_entry *list_head, char name) {
     mvprintw(y, x, "%c = {%s}", name, list_to_string(list_head));
 }
 
-void execute(int op, struct list_entry *A, struct list_entry *B) {
-    struct list_entry *C = NULL;
-    int sublist = 0;
-
+struct list_entry *execute(int op, struct list_entry *A, struct list_entry *B, struct list_entry *C) {
     switch(op) {
         case 0:
             C = list_union(A, B);
@@ -52,20 +49,13 @@ void execute(int op, struct list_entry *A, struct list_entry *B) {
             C = list_diff(A, B);
             break;
         case 3:
-            C = list_simdiff(A, B);
-            break;
-        case 4:
-            sublist = list_is_sublist_of(A, B);
+            C = list_symdiff(A, B);
             break;
         default:
             break;
     }
 	CLEAR;
-    print_set(A, 'A');
-    print_set(B, 'B');
-    if (op != 4) print_set(C, 'C');
-    else printf(sublist == 1 ? "A is a subset of B\n" : "A is not a subset of B\n");
-    list_clear(C);
+    return C;
 }
 
 void draw_frame(int y1, int x1, int y2, int x2, int br_h) {
@@ -96,10 +86,10 @@ void show_menu_elements(int current_choose, char **menu, int menu_size) {
             printw("  %s\n", menu[i]);
         }
     }
-    draw_frame(0, 0, 10, 20, 3);
+    draw_frame(0, 0, 9, 20, 3);
 }
 
-int menu(char **menu_text, int menu_size, struct list_entry *A, struct list_entry *B) {
+int menu(char **menu_text, int choose, int menu_size, struct list_entry *A, struct list_entry *B, struct list_entry *C) {
     initscr();
     raw();
     keypad(stdscr, TRUE);
@@ -107,7 +97,6 @@ int menu(char **menu_text, int menu_size, struct list_entry *A, struct list_entr
     use_default_colors();
     start_color();
     init_pair(1, -1, COLOR_BLUE);
-    int choose = 0;
     curs_set(0);
     while (true) {
         clear();
@@ -115,6 +104,9 @@ int menu(char **menu_text, int menu_size, struct list_entry *A, struct list_entr
         mvprintw(0, 8, "Menu");
         mv_print_set(1, 22, A, 'A');
         mv_print_set(2, 22, B, 'B');
+        mvprintw(3, 22, list_is_sublist_of(A, B) ? "A is a subset of B" : "A is not a subset of B");
+        mvprintw(4, 22, list_is_sublist_of(B, A) ? "B is a subset of A" : "B is not a subset of A");
+        mv_print_set(6, 22, C, 'C');
         refresh();
         int character = getch();
         switch (character) {
@@ -139,25 +131,26 @@ int menu(char **menu_text, int menu_size, struct list_entry *A, struct list_entr
 }
 
 char **get_menu() {
-    char **menu = (char **) malloc(9 * sizeof(char *));
+    char **menu = (char **) malloc(8 * sizeof(char *));
     menu[0] = "Input A          ";
     menu[1] = "Input B          ";
     menu[2] = ";br";
     menu[3] = "Union            ";
     menu[4] = "Intersection     ";
-    menu[5] = "Difference       ";
-    menu[6] = "Sim. Difference  ";
-    menu[7] = "Is a subset      ";
-    menu[8] = "Quit             ";
+    menu[5] = "Difference (A\\B) ";
+    menu[6] = "Sym. Difference  ";
+//    menu[7] = "Is a subset      ";
+    menu[7] = "Quit             ";
     return menu;
 }
 
 int main() {
     CLEAR;
     char **menu_text = get_menu();
-    struct list_entry *A = NULL, *B = NULL;
+    struct list_entry *A = NULL, *B = NULL, *C = NULL;
+    int choose = 0;
     while (1) {
-        int op = menu(menu_text, 9, A, B);
+        int op = menu(menu_text, choose, 8, A, B, C);
         switch (op) {
             case 0:
                 A = ask_list_input('A');
@@ -165,17 +158,20 @@ int main() {
             case 1:
                 B = ask_list_input('B');
                 break;
-            case 8:
+            case 7:
                 free(menu_text);
                 list_clear(A);
                 list_clear(B);
                 CLEAR;
                 exit(0);
             default:
-                execute(op - 3, A, B);
+                C = execute(op - 3, A, B, C);
                 break;
         }
-        printf("Press whatever you want...\n");
-        getch();
+        if (op < 3) {
+            printf("Press whatever you want...\n");
+            getch();
+        }
+        choose = op;
     }
 }
